@@ -1,0 +1,3 @@
+User-agent: * 
+Allow: / 
+Sitemap: https://api.devoo.gessiia.com/sitemap_vitrine.xml 

@@ -1,0 +1,66 @@
+
+server {
+
+   listen 80;
+
+
+   server_name nameUrl ;
+   index index.php index.html index.htm;
+   root /var/www/nameUrl/dist/;
+   access_log /var/log/nginx/digest/admin.bulk.gessiia.com.access.log;
+   error_log /var/log/nginx/digest/admin.bulk.gessiia.com.error.log;
+   #return 301 https://$server_name$request_uri;
+
+   location / {
+
+    #    proxy_pass http://localhost:8081/;
+    #    proxy_http_version 1.1;
+    #    proxy_set_header Upgrade $http_upgrade;
+    #    proxy_set_header Connection 'upgrade';
+
+#rewrite ^/api/?(.*)$ /webservice/dispatcher.php?url=$1 last;
+#rewrite ^/([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$1$2.jpg last;
+#rewrite ^/([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$1$2$3.jpg last;
+#rewrite ^/([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$3/$1$2$3$4.jpg last;
+#rewrite ^/([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$3/$4/$1$2$3$4$5.jpg last;
+#rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$3/$4/$5/$1$2$3$4$5$6.jpg last;
+#rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$3/$4/$5/$6/$1$2$3$4$5$6$7.jpg last;
+#rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$3/$4/$5/$6/$7/$1$2$3$4$5$6$7$8.jpg last;
+#rewrite ^/([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])([0-9])(-[_a-zA-Z0-9-]*)?(-[0-9]+)?/.+\.jpg$ /img/p/$1/$2/$3/$4/$5/$6/$7/$8/$1$2$3$4$5$6$7$8$9.jpg last;
+#rewrite ^/c/([0-9]+)(-[_a-zA-Z0-9-]*)(-[0-9]+)?/.+\.jpg$ /img/c/$1$2.jpg last;
+#rewrite ^/c/([a-zA-Z-]+)(-[0-9]+)?/.+\.jpg$ /img/c/$1.jpg last;
+#rewrite ^/([0-9]+)(-[_a-zA-Z0-9-]*)(-[0-9]+)?/.+\.jpg$ /img/c/$1$2.jpg last;
+#try_files $uri $uri/ /index.php?$args;
+#try_files $uri /index.php$is_args$args;
+try_files $uri $uri/ /index.html;
+ #       try_files $uri $uri/ =404;
+    }
+location ~ \.php$ {
+    try_files $uri =404;
+    fastcgi_intercept_errors on;
+    fastcgi_index  index.php;
+    include        fastcgi_params;
+    fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_pass   php-fpm;
+}
+location ~ \.php$ {
+try_files $uri =404;
+fastcgi_split_path_info ^(.+\.php)(/.+)$;
+fastcgi_pass unix:/run/php-fpm/www.sock;
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+include /etc/nginx/fastcgi_params;
+}
+gzip on;
+gzip_comp_level 1;
+gzip_buffers 16 8k;
+gzip_types application/json text/css application/javascript;
+
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/pubx.default.cm/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/pubx.default.cm/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+
+ }

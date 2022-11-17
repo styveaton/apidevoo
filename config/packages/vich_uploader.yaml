@@ -1,0 +1,16 @@
+vich_uploader:
+  db_driver: orm
+  mappings:
+    publication_object:
+      uri_prefix: /images/publications
+      upload_destination: "%kernel.project_dir%/public/images/publications"
+      namer: Vich\UploaderBundle\Naming\OrignameNamer
+
+    vitrine_object:
+      uri_prefix: /images/vitrine
+      upload_destination: "%kernel.project_dir%/public/images/vitrine"
+      namer: Vich\UploaderBundle\Naming\OrignameNamer 
+    client_object:
+          uri_prefix: /images/client
+          upload_destination: "%kernel.project_dir%/public/images/client"
+          namer: Vich\UploaderBundle\Naming\OrignameNamer 

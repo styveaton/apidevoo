@@ -1,0 +1,455 @@
+
+// namespace App\Controller\Route;
+
+// use App\Entity\Auth\Client;
+// use App\Entity\Bulk\Calendrier;
+// use App\Entity\Bulk\Contact;
+// use App\Entity\Bulk\GroupeContact;
+// use App\Entity\Bulk\ListGroupeContact;
+// use App\Entity\Bulk\ListLotCalendrier;
+// use App\Entity\Bulk\ListSmsContact;
+// use App\Entity\Bulk\ListSmsLotsEnvoye;
+// use App\Entity\Bulk\Lot;
+// use App\Entity\Bulk\RouteListSmsLotsEnvoye;
+// use App\Entity\Bulk\SenderId;
+// use App\Entity\Bulk\Sms;
+// use App\Entity\Route\Operateur;
+// use App\Entity\Route\SenderApi;
+// use DateTime;
+// use Doctrine\ORM\EntityManagerInterface;
+// use Exception;
+// use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+// use Symfony\Component\HttpFoundation\JsonResponse;
+// use Symfony\Contracts\HttpClient\HttpClientInterface;
+
+// use Symfony\Component\Routing\Annotation\Route;
+// use Symfony\Component\HttpFoundation\Request;
+
+// use Doctrine\Persistence\ManagerRegistry;
+
+// class InternalToExternalApi extends AbstractController
+// {
+//     private   $clientWeb;
+
+//     private   $em;
+
+//     public    $doctrine;
+//     public function __construct(HttpClientInterface $clientWeb, EntityManagerInterface $em, ManagerRegistry $doctrine)
+//     {
+//         $this->clientWeb = $clientWeb;
+//         $this->em = $em;
+//         $this->doctrine = $doctrine;
+//     }
+
+
+
+//     /**
+//      *@Route("/sendSmsApi", name="sendSmsApi", methods={"POST"})
+//      * @param Request $data continet les donnees suivantes: message , keySecret du client,la liste des destinataire[Ou l'id du groupe de contact],la route,le senderId , on peut aussi ajouter un calendrier, qui represente la date a la quelle le message est sense etre envoye
+//      * @param Client $client represente l'utiliasteur voulant emettre
+//      * @param Array $data['destinataire'] est un tableau de numeros de destinataire
+//      * @param  HttpClientInterface $clientWeb l'element utilise pour effectuer les requettes
+//      * @throws Exception
+//      * 
+//      */
+//     public function sendSmsApi(Request $request)
+//     {
+//         $destinatireFinal
+//             = array();
+//         $destinatireError
+//             = array();
+//         $dataSucess = array();
+//         $data = $request->toArray();
+//         // dd($data);
+//         // if (empty($data['id']) || empty($data['message']) || empty($data['destinataire']) || empty($data['route'])) {
+//         //     return new JsonResponse([
+//         //         'message' => 'Mauvais parametre de requete  id, message ,destinataire, route sont requis'
+//         //     ], 400);
+//         // }
+
+
+//         $clientUser = $this->em->getRepository(Client::class)->findOneBy(['keySecret' => $data['keySecret']]);
+//         if ($clientUser) {
+//             $client =    $clientUser->getId();
+//         } else {
+//             return new JsonResponse([
+//                 'message' => 'Invalid keySecret'
+//             ], 400);
+//         }
+//         $numberByOperator = array();
+
+
+
+//         $BulkManager
+//             = $this->doctrine->getManager('Bulk');
+
+//         // $operator = $BulkManager->getRepository(Operateur::class)->findOneBy(['id' => 2]);
+//         // $apiLink = $BulkManager->getRepository(SenderApi::class)->findOneBy(['operateur' => $operator]);
+//         if (empty($data['groupeContact'])) {
+
+
+//             $dataFindContact = [
+//                 'client'
+//                 => $client,
+//                 'contacts' =>
+//                 $data['destinataire']
+//             ];
+//         } else {
+//             /**
+//              * si l'utilisateur precise un groude de contact existant 
+//              */
+//             $destinataires = [];
+
+//             $getGroupe = $BulkManager->getRepository(ListGroupeContact::class)->findBy(['groupeContact' => $data['groupeContact']]);
+//             if ($getGroupe) {
+//                 foreach ($getGroupe as $groupe) {
+//                     array_push($destinataires, $groupe->getContact()->getPhone());
+//                     # code...
+//                     // var_dump($groupe->getContact()->getPhone());
+//                 }
+//                 if (!empty($destinataires)) {
+
+//                     $dataFindContact = [
+//                         'client'
+//                         => $client,
+//                         'contacts' =>
+//                         $destinataires
+//                     ];
+//                 } else {
+//                     return new JsonResponse([
+//                         'message' => 'groupe vide'
+//                     ], 400);
+//                 }
+//             } else {
+//                 return new JsonResponse([
+//                     'message' => 'groupe innexistant'
+//                 ], 400);
+//             }
+//         }
+
+
+
+
+
+//         $dataSenderId = [
+//             'client'
+//             => $client,
+//             'senderId' =>
+//             $data['senderId']
+//         ];
+
+
+//         $newLot = $this->createLot($data, $client);
+
+//         if ($newLot) {
+
+
+//             $newSenderid = $this->findSenderId($dataSenderId);
+
+//             if ($newSenderid) {
+//                 $dataSms = [
+//                     'client'
+//                     => $client,
+//                     'senderId' =>
+//                     $newSenderid,
+//                     'message' => $data['message']
+//                 ];
+
+//                 $newSms = $this->createSms($dataSms);
+//                 if (
+
+
+//                     $newSms
+//                 ) {
+//                     $dataLSLE = [
+//                         'sms'
+//                         => $newSms,
+//                         'lot' =>
+//                         $newLot
+//                     ];
+//                     $newLSE = $this->createListSmsLotEnvoye($dataLSLE);
+//                     if ($newLSE) {
+//                         $dataRLSLE = [
+//                             'route'
+//                             =>
+//                             $data['route'],
+//                             'lse' =>
+//                             $newLSE
+//                         ];
+//                         $newRouteLSLE = $this->createRouteLSLE($dataRLSLE);
+
+//                         if ($newRouteLSLE) {
+//                             $final = $this->findContact($dataFindContact, $newLSE);
+
+
+//                             if (
+//                                 $final
+//                             ) {
+//                                 return  new JsonResponse([
+
+//                                     'reponse' => 'Traitement effectue',
+
+
+//                                 ], 200);
+//                             } else {
+//                                 return new JsonResponse([
+//                                     'message' => 'Une erreur est survenue durant l\'execution de votre requette'
+//                                 ], 400);
+//                             }
+//                         } else {
+//                             return new JsonResponse([
+//                                 'message' => 'Une erreur est survenue durant l\'execution de votre requette'
+//                             ], 400);
+//                         }
+//                     } else {
+//                         return new JsonResponse([
+//                             'message' => 'Une erreur est survenue durant l\'execution de votre requette'
+//                         ], 400);
+//                     }
+//                 } else {
+//                     return new JsonResponse([
+//                         'message' => 'Une erreur est survenue durant l\'execution de votre requette'
+//                     ], 400);
+//                 }
+//             } else {
+//                 return new JsonResponse([
+//                     'message' => 'Une erreur est survenue durant l\'execution de votre requette'
+//                 ], 400);
+//             }
+//         } else {
+//             return new JsonResponse([
+//                 'message' => 'Une erreur est survenue durant l\'execution de votre requette'
+//             ], 400);
+//         }
+//     }
+
+
+//     /**
+//      * doc createLot
+//      *
+//      * @param [] $request doit contenir idCient,la liste de  contact
+//      * @return void
+//      */
+//     public function createLot($data, $client)
+//     {
+
+//         $bulkManager = $this->doctrine->getManager('Bulk');
+
+
+//         $newLot = new Lot();
+
+//         $bulkManager->persist($newLot);
+//         $bulkManager->flush();
+//         // dd($data['calendrier']);
+//         if (empty($data['calendrier'])) {
+//         } else {
+
+
+//             $newCalendar = new Calendrier();
+//             $newCalendar->setDateExecution(new DateTime($data['calendrier']));
+//             $newCalendar->setClientId($client);
+
+//             $bulkManager->persist($newCalendar);
+//             $bulkManager->flush();
+
+
+//             $newlistLotCalendar = new ListLotCalendrier();
+//             $newlistLotCalendar->setCalendrier($newCalendar);
+//             $newlistLotCalendar->setLot($newLot);
+//             $bulkManager->persist($newlistLotCalendar);
+//             $bulkManager->flush();
+//         }
+
+//         return $newLot->getId();
+//     }
+
+//     /**
+//      * doc findSenderId
+//      *
+//      * @param [] $request doit contenir idCient,le  SenderId soit en int ou en string
+//      * @return void
+//      */
+//     public function findSenderId($request)
+//     {
+
+
+
+//         $bulkManager = $this->doctrine->getManager('Bulk');
+//         $data = $request;
+
+
+//         if (empty($data['client']) || empty($data['senderId'])) {
+//             return new JsonResponse([
+//                 'message' => 'Mauvais parametre de requete  senderId, CientId'
+//             ], 400);
+//         }
+
+//         $finalSenderId = 0;
+//         $SenderId = $data['senderId'];
+
+//         if ((string)(int)($data['senderId']) == ($data['senderId'])) {
+//             $finalSenderId = $SenderId;
+//             var_dump('initttttttttttt');
+//         } else {
+//             $ifSenderId = $bulkManager->getRepository(SenderId::class)->findOneBy(['senderId' => $SenderId, 'clientId' => $data['client']]);
+//             if ($ifSenderId) {
+
+//                 $finalSenderId = $ifSenderId->getId();
+//             } else {
+
+
+//                 $newSenderId = new SenderId();
+//                 $newSenderId->setSenderId($SenderId);
+//                 $newSenderId->setDescription('');
+//                 $newSenderId->setClientId($data['client']);
+//                 $bulkManager->persist($newSenderId);
+//                 $bulkManager->flush();
+//                 $finalSenderId = $newSenderId->getId();
+//             }
+//         }
+//         return $finalSenderId;
+//     }
+
+
+//     /**
+//      * doc findContact
+//      *
+//      * @param [] $request doit contenir id Cient,la liste de  contact,l'id du list sms lot envoye[lse]
+//      * @return void
+//      */
+//     public function findContact($request, $lse)
+//     {
+//         $data = $request;
+//         if (empty($data['contacts']) || empty($data['client'])) {
+//             return new JsonResponse([
+//                 'message' => 'Mauvais parametre de requete  contact, Cient Id'
+//             ], 400);
+//         } else {
+//             $idContact = 0;
+//             $bulkManager = $this->doctrine->getManager('Bulk');
+
+//             $contacts = $data['contacts'];
+
+//             for ($i = 0; $i <   count($contacts); $i++) {
+//                 $contactI = $contacts[$i];
+
+//                 $ifContact = $bulkManager->getRepository(Contact::class)->findOneBy(['phone' => $contactI, 'clientId' => $data['client']]);
+//                 if ($ifContact) {
+//                     $idContact = $ifContact->getId();
+//                 } else {
+
+//                     $newContact = new Contact();
+//                     $newContact->setNom('Nom Contact');
+//                     $newContact->setPrenom('Prenom Contact');
+//                     $newContact->setPhone($contactI);
+//                     $newContact->setPhoneCode('');
+//                     $newContact->setClientId($data['client']);
+//                     $bulkManager->persist($newContact);
+//                     $bulkManager->flush();
+//                     $idContact = $newContact->getId();
+//                 }
+
+//                 $dataLSC  = ['contact' => $idContact, 'lse' => $lse];
+
+//                 $this->createListSmsContact($dataLSC);
+//             }
+//             return true;
+//         }
+//     }
+
+
+//     /**
+//      * doc findContact
+//      *
+//      * @param [] $data doit contenir idCient,le senderId,le messageText Choisit
+//      * @return void
+//      */
+//     public function createSms($data)
+//     {
+//         if (empty($data['message']) || empty($data['client']) || empty($data['senderId'])) {
+//             return new JsonResponse([
+//                 'message' => 'Mauvais parametre de requete message, senderId, Cient Id'
+//             ], 400);
+//         }
+
+//         $bulkManager = $this->doctrine->getManager('Bulk');
+
+//         $senderId = $bulkManager->getRepository(SenderId::class)->findOneBy(['id' => $data['senderId']]);
+
+//         $newSms = new Sms();
+//         $newSms->setMessage($data['message']);
+//         $newSms->setSenderId($senderId);
+//         $newSms->setClientId($data['client']);
+//         $bulkManager->persist($newSms);
+//         $bulkManager->flush();
+
+//         return $newSms->getId();
+//     }
+
+
+//     /**
+//      * doc findContact
+//      *
+//      * @param [] $data doit contenir id de SMS,l'id du lot 
+//      * @return void
+//      */
+//     public function createListSmsLotEnvoye($datas)
+//     {
+
+//         $bulkManager = $this->doctrine->getManager('Bulk');
+//         $lot = $bulkManager->getRepository(lot::class)->findOneBy(['id' => $datas['lot']]);
+//         $sms = $bulkManager->getRepository(sms::class)->findOneBy(['id' => $datas['sms']]);
+
+
+//         $newLSLE = new ListSmsLotsEnvoye();
+//         $newLSLE->setLot($lot);
+//         $newLSLE->setSms($sms);
+//         $bulkManager->persist($newLSLE);
+//         $bulkManager->flush();
+
+//         return $newLSLE->getId();
+//     }
+//     /**
+//      * doc findContact
+//      *
+//      * @param [] $request doit contenir id de la route[route],id listsmslotenvoye [lse]
+//      * @return void
+//      */
+//     public function createRouteLSLE($data)
+//     {
+
+//         // dd($data);
+//         $bulkManager = $this->doctrine->getManager('Bulk');
+//         $lse = $bulkManager->getRepository(ListSmsLotsEnvoye::class)->findOneBy(['id' => $data['lse']]);
+
+
+//         $newLSLE = new RouteListSmsLotsEnvoye();
+//         $newLSLE->setRouteId($data['route']);
+//         $newLSLE->setListSmsLotsEnvoye($lse);
+//         $bulkManager->persist($newLSLE);
+//         $bulkManager->flush();
+
+//         return $newLSLE->getId();
+//     }
+//     /**
+//      * doc findContact
+//      *
+//      * @param [] $request doit contenir l'id du contact[contact],id listsmslotenvoye [lse]
+//      * @return void
+//      */
+//     public function createListSmsContact($data)
+//     {
+//         $bulkManager = $this->doctrine->getManager('Bulk');
+//         $lse =
+//             $bulkManager->getRepository(ListSmsLotsEnvoye::class)->findOneBy(['id' => $data['lse']]);
+//         $contact = $bulkManager->getRepository(Contact::class)->findOneBy(['id' => $data['contact']]);
+//         $newLSC = new ListSmsContact();
+//         // dd($data);
+//         $newLSC->setContact($contact);
+//         $newLSC->setListSmsLotsEnvoye($lse);
+//         $bulkManager->persist($newLSC);
+//         $bulkManager->flush();
+
+//         return $newLSC->getId();
+//     }
+// }

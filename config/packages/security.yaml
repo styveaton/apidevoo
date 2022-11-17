@@ -1,0 +1,146 @@
+security:
+  enable_authenticator_manager: true
+  # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+  password_hashers:
+    Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: "auto"
+    App\Entity\Client:
+      algorithm: auto
+
+  # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+  providers:
+    # used to reload user from session & other features (e.g. switch_user)
+    app_user_provider:
+      entity:
+        class: App\Entity\Auth\Client
+        property: phone
+  firewalls:
+    api_token_refresh:
+      pattern: ^/api/token/refresh
+      stateless: true
+      refresh_jwt: ~
+
+    dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
+      security: false
+    main:
+      lazy: true
+      stateless: true
+      provider: app_user_provider
+      json_login:
+        check_path: /api/auth
+        username_path: phone
+        password_path: password
+        success_handler: lexik_jwt_authentication.handler.authentication_success
+        failure_handler: lexik_jwt_authentication.handler.authentication_failure
+      jwt: ~
+
+      # activate different ways to authenticate
+      # https://symfony.com/doc/current/security.html#the-firewall
+
+      # https://symfony.com/doc/current/security/impersonating_user.html
+      # switch_user: true
+
+  # Easy way to control access for large sections of your site
+  # Note: Only the *first* access control that matches will be used
+  access_control:
+    # - { path: ^/r, roles: IS_AUTHENTICATED_FULLY }
+    # clientCrudControlleur
+    - { path: ^/client/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/client/create, roles: IS_AUTHENTICATED_FULLY }
+    # ManagerRoleController
+    - { path: ^/fonction/all, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/fonction/remove, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/fonction/add, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/role/new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/role/read, roles: IS_AUTHENTICATED_FULLY }
+    # publicationController
+    - { path: ^/category/read, roles: IS_AUTHENTICATED_FULLY }
+    #UserProjectController
+    - { path: ^/send, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/projet/refresh, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/projet/new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/projet/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/send/projet/smscameroon, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/send/projet/smsguinee, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/projet/crediter, roles: IS_AUTHENTICATED_FULLY }
+    #VitrineController
+    - { path: ^/vitrine/delettedomain, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/vitrine/verify/exist, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/vitrine/new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/vitrine/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/vitrine/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/section/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/section/modifyContains, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/section/upload, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/section/upload/add, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/section/contact/add, roles: IS_AUTHENTICATED_FULLY }
+    #BulkController
+    - { path: ^/state/sendingsms, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/sendSmsApi, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/eventSmsApi, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/sms/examiner, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/sms/datas/examiner, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/smssender/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/sms/read, roles: IS_AUTHENTICATED_FULLY }
+    #CalendrierController
+    - { path: ^/calendrier/new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/calendrier/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/notifications/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/calendrier/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/notification/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/notification/status, roles: IS_AUTHENTICATED_FULLY }
+    #ContactController
+    - { path: ^/contact/new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/contact/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/groupe/new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/groupe/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/groupe/addContact, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/contact/modify, roles: IS_AUTHENTICATED_FULLY }
+    #ExceptionController
+    - {
+        path: ^/exception/senderIdContact/create,
+        roles: IS_AUTHENTICATED_FULLY,
+      }
+    - { path: ^/exception/senderIdContact/verif, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/exception/all/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/exception/add, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/exception/modify, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/exception/desable, roles: IS_AUTHENTICATED_FULLY }
+    #LicenceController
+    - { path: ^/facture/read, roles: IS_AUTHENTICATED_FULLY }
+    #CommissionCRUDController
+    - { path: ^/commission/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/commission/sms/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/commission/tranche/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/commission/route/update, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/commission/tranchesms/read, roles: IS_AUTHENTICATED_FULLY }
+    #PaidController
+    - { path: ^/sendCommission, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/licence/paid, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/licence/notify, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/licence/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/moneytransaction, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/moneytransaction/notify, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/transaction/sms, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/transaction/locale, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/transaction/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/manipulation/read, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/update/profil/client, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/update/role/client, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/update/password/client, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/desactivate/client, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/transaction/commission, roles: IS_AUTHENTICATED_FULLY }
+    # - { path: ^/profile, roles: ROLE_USER }
+
+when@test:
+  security:
+    password_hashers:
+      # By default, password hashers are resource intensive and take time. This is
+      # important to generate secure password hashes. In tests however, secure hashes
+      # are not important, waste resources and increase test times. The following
+      # reduces the work factor to the lowest possible values.
+      Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+        algorithm: auto
+        cost: 4 # Lowest possible value for bcrypt
+        time_cost: 3 # Lowest possible value for argon
+        memory_cost: 10 # Lowest possible value for argon
